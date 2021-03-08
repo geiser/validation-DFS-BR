@@ -41,10 +41,11 @@ Geiser Chalco Challco <geiser@alumni.usp.br>
         -   [Graphs of test information
             curve](#graphs-of-test-information-curve-1)
 
--   DataSet: [data-dfs.csv](data-dfs.csv) OR
-    [dfs2-data.xlsx](dfs2-data.xlsx)
 
 # Prerequisites
+
+- script: [script.R](script.R)
+- DataSet: [data-dfs.csv](data-dfs.csv) OR [dfs2-data.xlsx](dfs2-data.xlsx)
 
 ## Loading libs
 
