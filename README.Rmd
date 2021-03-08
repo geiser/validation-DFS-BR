@@ -16,8 +16,6 @@ output:
 fontsize: 10pt
 ---
 
-* DataSet: [data-dfs.csv](data-dfs.csv) OR [dfs2-data.xlsx](dfs2-data.xlsx)
-
 ```{r setup, include=FALSE, echo=FALSE}
 wants <- c('psych', 'dplyr','readxl','psy','olsrr','MVN','parameters')
 has <- wants %in% rownames(installed.packages())
@@ -30,6 +28,9 @@ options(warn = -1)
 ```
 
 # Prerequisites
+
+* script: [script.R](script.R)
+* DataSet: [data-dfs.csv](data-dfs.csv) OR [dfs2-data.xlsx](dfs2-data.xlsx)
 
 ## Loading libs
 
