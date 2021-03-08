@@ -16,8 +16,6 @@ output:
 fontsize: 10pt
 ---
 
-* DataSet: [data-dfs.csv](data-dfs.csv) OR [dfs2-data.xlsx](dfs2-data.xlsx)
-
 ```{r setup, include=FALSE, echo=FALSE}
 wants <- c('psych', 'dplyr','readxl','psy','olsrr','MVN','parameters')
 has <- wants %in% rownames(installed.packages())
@@ -30,6 +28,9 @@ options(warn = -1)
 ```
 
 # Prerequisites
+
+* script: [script.R](script.R)
+* DataSet: [data-dfs.csv](data-dfs.csv) OR [dfs2-data.xlsx](dfs2-data.xlsx)
 
 ## Loading libs
 
@@ -66,13 +67,12 @@ dfs <- as.data.frame(sapply(select(raw_data, starts_with("Q")), as.integer))
 
 ### Summarizing descriptives and KMOs
 
-```r
-t(round(cbind(mvn_mod$Descriptives[,c("Mean","Std.Dev","Median","Skew","Kurtosis")],"MSA"=kmo_mod$MSAi),2))
-```
 
-```{r, echo=FALSE}
-df <- cbind(mvn_mod$Descriptives[,c("Mean","Std.Dev","Median","Skew","Kurtosis")],"MSA"=kmo_mod$MSAi)
-knitr::kable(t(round(df,2)))
+```{r}
+df <- cbind(mvn_mod$Descriptives[,c("Mean","Std.Dev","Median","Skew","Kurtosis")]
+            , mvn_mod$univariateNormality[,c("Statistic","p value")]
+            , "MSAi"=kmo_mod$MSAi)
+knitr::kable(df, digits = 3)
 ```
 
 
@@ -319,10 +319,10 @@ sl <- sl$est.std[sl$op == "=~"]
 
 ```{r, include=FALSE}
 df_fit <- do.call(rbind, lapply(c(fit1a,fit2,fit3,fit4), FUN = function(fit) {
-  dat <- as.list(round(fitMeasures(fit, c("chisq","df","rni","cfi","tli","srmr"
+  dat <- as.list(round(fitMeasures(fit, c("chisq","df","gfi","agfi","rni","cfi","tli","srmr"
                                           ,"rmsea","rmsea.ci.lower","rmsea.ci.upper")), 3))
   rbind(c(dat[c("chisq","df")],"chisq/df"=round(dat$chisq/dat$df,3)
-          , dat[c("rni","cfi","tli","srmr","rmsea")]
+          , dat[c("gfi","agfi","cfi","rni","tli","srmr","rmsea")]
           , "rmsea.ci" = paste0("[",dat$rmsea.ci.lower,"; ",dat$rmsea.ci.upper,"]")))
 }))
 rownames(df_fit) <- c("multicorr","2nd-order","unidim1", "unidim2")
