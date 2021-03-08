@@ -1,24 +1,3 @@
----
-title: "Factor Analysis of DFS-BR"
-author: Geiser Chalco Challco <geiser@alumni.usp.br>
-output:
-  github_document:
-    toc: true
-    toc_depth: 3
-  word_document: default
-  html_document: 
-    toc: true
-    toc_depth: 3
-    theme: default
-    highlight: default
-  pdf_document:
-    keep_tex: true
-fontsize: 10pt
----
-
-* DataSet: [data-dfs.csv](data-dfs.csv) OR [dfs2-data.xlsx](dfs2-data.xlsx)
-
-```{r setup, include=FALSE, echo=FALSE}
 wants <- c('psych', 'dplyr','readxl','psy','olsrr','MVN','parameters')
 has <- wants %in% rownames(installed.packages())
 if (any(!has)) install.packages(wants[!has])
@@ -27,13 +6,11 @@ options("mc.cores"=parallel::detectCores())
 knitr::opts_chunk$set(echo = TRUE)
 defaultW <- getOption("warn")
 options(warn = -1)
-```
 
 # Prerequisites
 
 ## Loading libs
 
-```{r,message=FALSE}
 library(readr)
 library(dplyr)
 library(psych)
@@ -41,61 +18,37 @@ library(lavaan)
 library(olsrr)
 library(semTools)
 library(mirt)
-```
 
 ## Loading data
 
-```{r}
 raw_data <- read.csv("data-dfs.csv")
 dfs <- as.data.frame(sapply(select(raw_data, starts_with("Q")), as.integer))
-```
 
 ## Checking assumptions 
 
 ### Evaluating normality
 
-```{r}
 (mvn_mod <- MVN::mvn(dfs))
-```
 
 ### Performing Kaiser, Meyer, Olkin (KMO) Measure of Sampling Adequacy 
 
-```{r}
 (kmo_mod <- KMO(dfs)) 
-```
 
 ### Summarizing descriptives and KMOs
 
-```r
 t(round(cbind(mvn_mod$Descriptives[,c("Mean","Std.Dev","Median","Skew","Kurtosis")],"MSA"=kmo_mod$MSAi),2))
-```
-
-```{r, echo=FALSE}
-df <- cbind(mvn_mod$Descriptives[,c("Mean","Std.Dev","Median","Skew","Kurtosis")],"MSA"=kmo_mod$MSAi)
-knitr::kable(t(round(df,2)))
-```
 
 
 ### Performing Bartlett's test of sphericity
 
-Don't use *bartlett.test()* - it performs test of homogeneity of variances
-
-```{r}
-(parameters::check_sphericity(dfs)) 
-```
+(parameters::check_sphericity(dfs)) # *bartlett.test()* performs test of homogeneity of variances
 
 # Construct validity
-
-As there is not normality in the results, we decided to use the mean- and variance-adjusted weighted least squares (WLSMV) estimator, based on that WLSMV does not assume normal variables and it is a robust estimator developed to model categorical or ordered data (our case 5-likert scale).
-
-* Brown, T. (2006). Confirmatory factor analysis for applied research. New York: Guildford.
-* Proitsi, P., et al. (2009). A multiple indicators multiple causes (MIMIC) model of behavioural and psychological symptoms in dementia (BPSD). Neurobiology Aging. doi:10.1016/j.neurobiolaging.2009.03.005
 
 ## Structural validity
 
 ### CFA in the multicorrelated model
 
-```{r}
 Modelo1 <- '
 CSB =~ Q1 + Q10 + Q19 + Q28
 MAA =~ Q2 + Q11 + Q20 + Q29
@@ -154,11 +107,7 @@ TT ~~ AE
 
 fit1 <-cfa(Modelo1, data=dfs,estimator="WLSMV", std.lv=TRUE)
 standardizedSolution(fit1)
-```
 
-Fixing correlations in the multicorrelated model
-
-```{r}
 Modelo1a <- '
 CSB =~ Q1 + Q10 + Q19 + Q28
 MAA =~ Q2 + Q11 + Q20 + Q29
@@ -217,11 +166,9 @@ TT ~~ 1*AE
 
 fit1a <-cfa(Modelo1a, data=dfs,estimator="WLSMV", std.lv=TRUE)
 standardizedSolution(fit1a)
-```
 
 ### CFA in the 2nd-order model
 
-```{r}
 Modelo2 <- '
 CSB =~ Q1 + Q10 + Q19 + Q28
 MAA =~ Q2 + Q11 + Q20 + Q29
@@ -281,43 +228,27 @@ TT ~~ 0*AE
 
 fit2 <-cfa(Modelo2, data=dfs,estimator="WLSMV", std.lv=TRUE)
 standardizedSolution(fit2)
-```
 
 ### CFA in the short version of DFS-BR (DFS-short)
 
-```{r}
 Modelo3 <- 'DFS =~ Q19 + Q29 + Q12 + Q22 + Q32 + Q6 + Q7 + Q17 + Q36'
 
 fit3 <-cfa(Modelo3, data=dfs,estimator="WLSMV", std.lv=TRUE)
 standardizedSolution(fit3)
-```
 
 ### CFA in an alternative short version of DFS-BR (DFS-short2)
 
-To elaborate this version, we replaced the items from the original short version
-that doesn't have item loadings close or high to the value of 0.7 in
-the long version of the DFS-BR. Thus, in the CSB, the item Q19 was replaced for Q10.
-In the MAA, the item Q29 was replaced for Q20. In the CG, the item Q12 was replaced for Q21.
-In the UF, the item Q22 was replaced for Q4. In SC, the item Q6 was changed for Q24.
-For the rest of factors CTH, LSC, TT, AE the items Q32, Q7, Q17 and Q36 were maintained.
-
-
-```{r}
 Modelo4 <- 'DFS =~ Q10 + Q20 + Q21 + Q4 + Q32 + Q24 + Q7 + Q17 + Q36'
 
 fit4 <-cfa(Modelo4, data=dfs,estimator="WLSMV", std.lv=TRUE)
 standardizedSolution(fit4)
-```
 
-```{r}
 sl <- standardizedSolution(fit4)
 sl <- sl$est.std[sl$op == "=~"]
 (describe(sl))
-```
 
 ### Summarize the fit indexes and draw the diagrams of CFA models
 
-```{r, include=FALSE}
 df_fit <- do.call(rbind, lapply(c(fit1a,fit2,fit3,fit4), FUN = function(fit) {
   dat <- as.list(round(fitMeasures(fit, c("chisq","df","rni","cfi","tli","srmr"
                                           ,"rmsea","rmsea.ci.lower","rmsea.ci.upper")), 3))
@@ -327,35 +258,17 @@ df_fit <- do.call(rbind, lapply(c(fit1a,fit2,fit3,fit4), FUN = function(fit) {
 }))
 rownames(df_fit) <- c("multicorr","2nd-order","unidim1", "unidim2")
 (df_fit)
-```
 
-```{r, echo=FALSE}
-knitr::kable(df_fit)
-```
-
-```{r}
 anova(fit1a,fit2)
-```
 
-> *Note*: Significant difference Pr(>Chisq) indicates that:
-> The model1 fits the gathered data significantly different (better/worse) than the model2
 
 ## Internal consistency (reliability)
 
-```{r}
 reliability(fit1a, return.total = T)
 reliabilityL2(fit2, 'F1')
-```
 
-
-```{r}
 reliability(fit4, return.total = T)
-```
 
-
-Calculating composite reliability
-
-```{r}
 Fatores <- list(
   'CSB'   = c("Q1","Q10","Q19","Q28")
   , 'MAA' = c("Q2","Q11","Q20","Q29")
@@ -387,21 +300,14 @@ compReliability <- function(fit, lfactors = c(), return.total = F) {
 }
 
 (compReliability(fit1a, Fatores, return.total = T))
-
 (compReliability(fit4, c(), return.total = T))
-```
 
-Summary of all reliability tests
 
-```{r, echo=FALSE}
 df.rel <- rbind(reliability(fit1a, return.total = T),
                 "CR"=compReliability(fit1a, Fatores, return.total = T))
-knitr::kable(round(df.rel, 3))
-```
+(round(df.rel, 3))
 
 ## Convergent validity and discriminant validity
-
-```{r}
 
 convergentDiscriminantValidity <- function(fit, lvn, factors, dat) {
   library(olsrr)
@@ -434,79 +340,33 @@ convergentDiscriminantValidity <- function(fit, lvn, factors, dat) {
 }
 
 convergentDiscriminantValidity(fit1a, Modelo1a, Fatores, dat = dfs)
-```
-
-```{r, echo=FALSE}
-df <- convergentDiscriminantValidity(fit1a, Modelo1a, Fatores, dat = dfs)
-knitr::kable(round(df, 3))
-```
-
- * If AVE is less than 0.5, but CR is higher than 0.6 in all the factors, the convergent validity of the construct is still adequate (Fornell & Larcker, 1981).
-
- * If the VIF > 5, there is mulcollinearity issues in the dataset. The possible solutions are:
-Remove items with maximal VIF in the items for factors (VFI.i); or combine constructs with more than .80 or .85  correlation values.
-
- * The lower triangualar part of the table corresponds with correlations between factors. The square root of AVE is located in the diagonally of the matrix. For discriminate validity, the diagonal elements should be larger than the off-diagonal elements (correlations for factors).
- 
- * The upper triangular part of the table displays the heterotrait-monotrait ratio (HTMT) of the correlations (Henseler, Ringlet & Sarstedt, 2015). Lower values indicate higher levels of discriminant validity. HTMT values greater than 0.85 (> 0.85) indicate discriminant validity issues.
-
-```{r include=FALSE}
-options(warn = defaultW)
-```
 
 # Item quality analysis based on IRT
 
 ## IRT analysis in the long version of the DFS-BR
 
-```{r}
 dados_tri<-mirt(dfs, 1, itemtype='graded')
-```
 
 ### Estimate parameters
 
-```{r}
-params <- coef(dados_tri, simplify=TRUE, IRTpars=TRUE)
-knitr::kable(round(params$items, 3))
-```
+(params <- coef(dados_tri, simplify=TRUE, IRTpars=TRUE))
 
 ### Graphs of test information curve
 
-```{r}
 plot(dados_tri, type='infotrace')
-
 plot(dados_tri, type='info')
-```
-
-Graph of Test Information and Standard Errors
-
-```{r}
 plot(dados_tri, type='infoSE')
-```
-
 
 ## IRT analysis in the short version of the DFS-BR
 
-```{r}
 dados_tri2 <-mirt(dfs[,c("Q10","Q20","Q21","Q4","Q32","Q24","Q7","Q17","Q36")], 1, itemtype='graded')
-```
 
 ### Estimate parameters
 
-```{r}
-params2 <- coef(dados_tri2, simplify=TRUE, IRTpars=TRUE)
-knitr::kable(round(params2$items, 3))
-```
+(params2 <- coef(dados_tri2, simplify=TRUE, IRTpars=TRUE))
 
 ### Graphs of test information curve
 
-```{r}
 plot(dados_tri2,type='infotrace')
-
 plot(dados_tri2,type='info')
-```
-
-Graph of Test Information and Standard Errors
-
-```{r}
 plot(dados_tri2,type='infoSE')
-```
