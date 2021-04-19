@@ -470,7 +470,7 @@ dados_tri<-mirt(dfs, 1, itemtype='graded')
 (params <- coef(dados_tri, simplify=TRUE, IRTpars=TRUE))
 ```
 
-```{r, include=FALSE, purl=TRUE}
+```{r, include=FALSE, purl=FALSE}
 knitr::kable(params$items, digits = 3)
 ```
 
@@ -515,7 +515,7 @@ Graph of Test Information and Standard Errors
 plot(dados_tri2,type='infoSE')
 ```
 
-## ---- end --- 
+
 
 ```{r, purl=FALSE, include=FALSE, echo=FALSE}
 options(warn = defaultW)
