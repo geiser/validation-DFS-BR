@@ -21,11 +21,14 @@ wants <- c('psych', 'dplyr','readxl','psy','olsrr','MVN','parameters')
 has <- wants %in% rownames(installed.packages())
 if (any(!has)) install.packages(wants[!has])
 options("mc.cores"=parallel::detectCores())
+```
 
+```{r, purl=FALSE, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 defaultW <- getOption("warn")
 options(warn = -1)
 ```
+
 
 # Prerequisites
 
@@ -68,13 +71,15 @@ dfs <- as.data.frame(sapply(select(raw_data, starts_with("Q")), as.integer))
 ### Summarizing descriptives and KMOs
 
 
-```{r}
-df <- cbind(mvn_mod$Descriptives[,c("Mean","Std.Dev","Median","Skew","Kurtosis")]
-            , mvn_mod$univariateNormality[,c("Statistic","p value")]
-            , "MSAi"=kmo_mod$MSAi)
-knitr::kable(df, digits = 3)
+```{r, echo=FALSE}
+(df <- cbind(mvn_mod$Descriptives[,c("Mean","Std.Dev","Median","Skew","Kurtosis")]
+             , mvn_mod$univariateNormality[,c("Statistic","p value")]
+             , "MSAi"=kmo_mod$MSAi))
 ```
 
+```{r, echo=FALSE, purl=FALSE}
+knitr::kable(df, digits = 3)
+```
 
 ### Performing Bartlett's test of sphericity
 
@@ -309,15 +314,9 @@ fit4 <-cfa(Modelo4, data=dfs,estimator="WLSMV", std.lv=TRUE)
 standardizedSolution(fit4)
 ```
 
-```{r}
-sl <- standardizedSolution(fit4)
-sl <- sl$est.std[sl$op == "=~"]
-(describe(sl))
-```
-
 ### Summarize the fit indexes and draw the diagrams of CFA models
 
-```{r, include=FALSE}
+```{r, echo=FALSE}
 df_fit <- do.call(rbind, lapply(c(fit1a,fit2,fit3,fit4), FUN = function(fit) {
   dat <- as.list(round(fitMeasures(fit, c("chisq","df","gfi","agfi","rni","cfi","tli","srmr"
                                           ,"rmsea","rmsea.ci.lower","rmsea.ci.upper")), 3))
@@ -325,11 +324,12 @@ df_fit <- do.call(rbind, lapply(c(fit1a,fit2,fit3,fit4), FUN = function(fit) {
           , dat[c("gfi","agfi","cfi","rni","tli","srmr","rmsea")]
           , "rmsea.ci" = paste0("[",dat$rmsea.ci.lower,"; ",dat$rmsea.ci.upper,"]")))
 }))
-rownames(df_fit) <- c("multicorr","2nd-order","unidim1", "unidim2")
+rownames(df_fit) <- c("multicorrelated 9-factors","2nd-order 9-factors"
+                      ,"original short ver", "alternative short ver")
 (df_fit)
 ```
 
-```{r, echo=FALSE}
+```{r, include=FALSE, purl=FALSE}
 knitr::kable(df_fit)
 ```
 
@@ -394,15 +394,17 @@ compReliability <- function(fit, lfactors = c(), return.total = F) {
 Summary of all reliability tests
 
 ```{r, echo=FALSE}
-df.rel <- rbind(reliability(fit1a, return.total = T),
-                "CR"=compReliability(fit1a, Fatores, return.total = T))
-knitr::kable(round(df.rel, 3))
+(df.rel <- rbind(reliability(fit1a, return.total = T)
+                 , "CR"=compReliability(fit1a, Fatores, return.total = T)))
+```
+
+```{r, include=FALSE,purl=FALSE}
+knitr::kable(df.rel, digits = 3)
 ```
 
 ## Convergent validity and discriminant validity
 
 ```{r}
-
 convergentDiscriminantValidity <- function(fit, lvn, factors, dat) {
   library(olsrr)
   library(semTools)
@@ -437,8 +439,11 @@ convergentDiscriminantValidity(fit1a, Modelo1a, Fatores, dat = dfs)
 ```
 
 ```{r, echo=FALSE}
-df <- convergentDiscriminantValidity(fit1a, Modelo1a, Fatores, dat = dfs)
-knitr::kable(round(df, 3))
+(df <- convergentDiscriminantValidity(fit1a, Modelo1a, Fatores, dat = dfs))
+```
+
+```{r, include=FALSE, purl=FALSE}
+knitr::kable(df, digits = 3)
 ```
 
  * If AVE is less than 0.5, but CR is higher than 0.6 in all the factors, the convergent validity of the construct is still adequate (Fornell & Larcker, 1981).
@@ -450,9 +455,6 @@ Remove items with maximal VIF in the items for factors (VFI.i); or combine const
  
  * The upper triangular part of the table displays the heterotrait-monotrait ratio (HTMT) of the correlations (Henseler, Ringlet & Sarstedt, 2015). Lower values indicate higher levels of discriminant validity. HTMT values greater than 0.85 (> 0.85) indicate discriminant validity issues.
 
-```{r include=FALSE}
-options(warn = defaultW)
-```
 
 # Item quality analysis based on IRT
 
@@ -464,22 +466,23 @@ dados_tri<-mirt(dfs, 1, itemtype='graded')
 
 ### Estimate parameters
 
-```{r}
-params <- coef(dados_tri, simplify=TRUE, IRTpars=TRUE)
-knitr::kable(round(params$items, 3))
+```{r, echo=FALSE}
+(params <- coef(dados_tri, simplify=TRUE, IRTpars=TRUE))
+```
+
+```{r, include=FALSE, purl=TRUE}
+knitr::kable(params$items, digits = 3)
 ```
 
 ### Graphs of test information curve
 
-```{r}
+```{r, fig.width=12}
 plot(dados_tri, type='infotrace')
-
-plot(dados_tri, type='info')
 ```
 
 Graph of Test Information and Standard Errors
 
-```{r}
+```{r, fig.width=12}
 plot(dados_tri, type='infoSE')
 ```
 
@@ -492,21 +495,28 @@ dados_tri2 <-mirt(dfs[,c("Q10","Q20","Q21","Q4","Q32","Q24","Q7","Q17","Q36")], 
 
 ### Estimate parameters
 
-```{r}
-params2 <- coef(dados_tri2, simplify=TRUE, IRTpars=TRUE)
-knitr::kable(round(params2$items, 3))
+```{r, echo=FALSE}
+(params2 <- coef(dados_tri2, simplify=TRUE, IRTpars=TRUE))
+```
+
+```{r, include=FALSE, purl=FALSE}
+knitr::kable(params2$items, digits = 3)
 ```
 
 ### Graphs of test information curve
 
-```{r}
+```{r, fig.width=12}
 plot(dados_tri2,type='infotrace')
-
-plot(dados_tri2,type='info')
 ```
 
 Graph of Test Information and Standard Errors
 
-```{r}
+```{r, fig.width=12}
 plot(dados_tri2,type='infoSE')
+```
+
+## ---- end --- 
+
+```{r, purl=FALSE, include=FALSE, echo=FALSE}
+options(warn = defaultW)
 ```
